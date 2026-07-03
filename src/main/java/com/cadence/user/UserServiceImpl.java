@@ -4,6 +4,8 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.cadence.common.exception.DuplicateResourceException;
+import com.cadence.common.exception.ResourceNotFoundException;
 import com.cadence.user.dto.CreateUserRequest;
 import com.cadence.user.dto.UserResponse;
 
@@ -20,7 +22,7 @@ public class UserServiceImpl implements UserService {
     public UserResponse createUser(CreateUserRequest request) {
         // Business rule: no two users can share an email
         if (userRepository.existsByEmail(request.email())) {
-            throw new IllegalStateException("Email already in use: " + request.email());
+            throw new DuplicateResourceException("Email already in use: " + request.email());
         }
         User saved = userRepository.save(UserMapper.toEntity(request));
         return UserMapper.toResponse(saved);
@@ -36,7 +38,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserResponse getUserById(Long id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new IllegalStateException("User not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
         return UserMapper.toResponse(user);
     }
 
