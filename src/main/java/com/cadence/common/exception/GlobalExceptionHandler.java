@@ -29,9 +29,14 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.NOT_FOUND, e.getMessage(), null);
     }
 
-    // 409 - duplicate
+    // 409 - conflict
     @ExceptionHandler(DuplicateResourceException.class)
     public ResponseEntity<ApiError> handleDuplicate(DuplicateResourceException e) {
+        return build(HttpStatus.CONFLICT, e.getMessage(), null);
+    }
+
+    @ExceptionHandler(InvalidStatusTransitionException.class)
+    public ResponseEntity<ApiError> handleInvalidTransition(InvalidStatusTransitionException e) {
         return build(HttpStatus.CONFLICT, e.getMessage(), null);
     }
 
@@ -42,6 +47,12 @@ public class GlobalExceptionHandler {
         e.getBindingResult().getFieldErrors()
                 .forEach(error -> fieldErrors.put(error.getField(), error.getDefaultMessage()));
         return build(HttpStatus.BAD_REQUEST, "Validation failed", fieldErrors);
+    }
+
+    // 422 - unprocessable entity
+    @ExceptionHandler(BusinessRuleException.class)
+    public ResponseEntity<ApiError> handleBusinessRule(BusinessRuleException e) {
+        return build(HttpStatus.UNPROCESSABLE_ENTITY, e.getMessage(), null);
     }
 
     // 500 - anything unanticipated
