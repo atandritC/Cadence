@@ -2,12 +2,15 @@ package com.cadence.user;
 
 import java.util.List;
 
+import com.cadence.user.dto.CreateUserRequest;
+import com.cadence.user.dto.UserResponse;
+
 public interface UserService {
 
-    User createUser(User user);
+    UserResponse createUser(CreateUserRequest request);
 
-    List<User> getAllUsers();
+    List<UserResponse> getAllUsers();
 
-    User getUserById(Long id);
+    UserResponse getUserById(Long id);
 
 }
