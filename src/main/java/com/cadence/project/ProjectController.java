@@ -20,7 +20,7 @@ import com.cadence.project.dto.UpdateProjectStatusRequest;
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/cadence/project")
+@RequestMapping("/cadence/projects")
 public class ProjectController {
 
     private final ProjectService projectService;

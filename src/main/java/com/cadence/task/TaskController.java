@@ -20,7 +20,7 @@ import com.cadence.task.dto.UpdateTaskStatusRequest;
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/cadence/task")
+@RequestMapping("/cadence/tasks")
 public class TaskController {
 
     private final TaskService taskService;

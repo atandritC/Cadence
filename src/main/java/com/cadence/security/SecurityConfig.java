@@ -26,7 +26,9 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll() // register/login are public
+                        .requestMatchers("/cadence/auth/**", "/swagger-ui.html",
+                                "/swagger-ui/**", "/v3/api-docs/**")
+                        .permitAll() // register/login are public
                         .anyRequest().authenticated() // everything else needs a token
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
