@@ -1,6 +1,6 @@
 # Cadence — Project Management REST API
 > 🔗 **Live API:** [Swagger UI](https://cadence-t6ui.onrender.com/swagger-ui.html) — the free tier sleeps when idle, so the **first request may take ~40s** to wake. Register, click **Authorize**, then try any endpoint.
-
+---
 > A backend-focused, production-style project management API (think a lightweight Jira/Trello engine) built with **Java 21** and **Spring Boot 3.5**. Teams create **projects**, break work into **tasks/user stories**, assign developers, and move work through an **enforced status workflow** — all behind **JWT-secured**, well-documented REST endpoints.
 
 <p align="left">
