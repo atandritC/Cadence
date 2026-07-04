@@ -2,6 +2,8 @@ package com.cadence.project;
 
 import java.util.List;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +27,7 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
+    @CacheEvict(value = "projects", key = "#projectId")
     @Transactional
     public ProjectResponse addMember(Long projectId, Long userId) {
         Project project = projectRepository.findById(projectId)
@@ -53,6 +56,7 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
+    @Cacheable(value = "projects", key = "#id")
     @Transactional(readOnly = true)
     public ProjectResponse getProjectById(Long id) {
         Project project = projectRepository.findById(id)
@@ -70,6 +74,7 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
+    @CacheEvict(value = "projects", key = "#id")
     @Transactional
     public ProjectResponse updateStatus(Long id, UpdateProjectStatusRequest request) {
         Project project = projectRepository.findById(id)
