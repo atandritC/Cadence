@@ -88,7 +88,7 @@ Client ──► Controller (REST / HTTP)  ──►  Service (business logic)  
 
 ## Data Model (ER Diagram)
 
-![Cadence ER Diagram](https://raw.githubusercontent.com/atandritC/Project-Demos/main/Cadence_ER-Diagram.png)
+![Cadence ER Diagram](https://github.com/atandritC/Project-Demos/blob/main/Cadence_ER-Diagram.png)
 
 - `users` — accounts (email, hashed password, role).
 - `projects` — owned by a manager (`@ManyToOne`), with a developer team (`project_members`, `@ManyToMany`).
@@ -100,7 +100,7 @@ Client ──► Controller (REST / HTTP)  ──►  Service (business logic)  
 
 Both **tasks** and **projects** move through a **finite state machine** enforced by a single generic engine (`WorkflowStatus` + `StatusWorkflow`). Illegal transitions are rejected with `409 Conflict`.
 
-![Cadence Status Workflows](https://raw.githubusercontent.com/atandritC/Project-Demos/main/cadence-status-workflows.svg)
+![Cadence Status Workflows](https://github.com/atandritC/Project-Demos/blob/main/cadence-status-workflows.svg)
 
 **Rules (shared by both workflows):**
 - A **forward-only** happy path — no skipping steps.
