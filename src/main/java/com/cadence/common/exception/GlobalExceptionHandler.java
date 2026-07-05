@@ -6,6 +6,7 @@ import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -21,6 +22,12 @@ public class GlobalExceptionHandler {
                 message,
                 fieldErrors);
         return ResponseEntity.status(status).body(body);
+    }
+
+    // 401 - bad credentials
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ApiError> handleAuth(AuthenticationException e) {
+        return build(HttpStatus.UNAUTHORIZED, "Invalid email or password.", null);
     }
 
     // 404 - resource not found

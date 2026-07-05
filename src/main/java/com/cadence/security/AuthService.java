@@ -9,7 +9,6 @@ import com.cadence.common.exception.DuplicateResourceException;
 import com.cadence.security.dto.AuthResponse;
 import com.cadence.security.dto.LoginRequest;
 import com.cadence.security.dto.RegisterRequest;
-import com.cadence.user.Role;
 import com.cadence.user.User;
 import com.cadence.user.UserRepository;
 
@@ -37,7 +36,6 @@ public class AuthService {
         user.setEmail(request.email());
         user.setFullName(request.fullName());
         user.setPassword(passwordEncoder.encode(request.password())); // HASH before saving
-        user.setRole(Role.USER);
         userRepository.save(user);
 
         return new AuthResponse(jwtService.generateToken(user.getEmail()));

@@ -1,13 +1,9 @@
 package com.cadence.user;
 
-import org.hibernate.annotations.ColumnDefault;
-
 import com.cadence.common.BaseEntity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -28,10 +24,5 @@ public class User extends BaseEntity {
 
     @Column(nullable = false)
     private String password;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    @ColumnDefault("'USER'")
-    private Role role = Role.USER;
 
 }

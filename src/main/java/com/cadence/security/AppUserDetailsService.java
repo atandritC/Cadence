@@ -2,7 +2,6 @@ package com.cadence.security;
 
 import java.util.List;
 
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -14,7 +13,7 @@ import com.cadence.user.UserRepository;
 @Service
 public class AppUserDetailsService implements UserDetailsService {
 
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
     public AppUserDetailsService(UserRepository userRepository) {
         this.userRepository = userRepository;
@@ -28,7 +27,7 @@ public class AppUserDetailsService implements UserDetailsService {
         return org.springframework.security.core.userdetails.User.builder()
                 .username(user.getEmail())
                 .password(user.getPassword()) // the stored BCrypt hash
-                .authorities(List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name())))
+                .authorities(List.of())
                 .build();
     }
 
