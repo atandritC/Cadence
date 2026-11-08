@@ -1,241 +1,217 @@
-# Cadence — Project Management REST API
-> 🔗 **Live API:** [Swagger UI](https://cadence-t6ui.onrender.com/swagger-ui.html) — the free tier sleeps when idle, so the **first request may take ~40s** to wake. Register, click **Authorize**, then try any endpoint.
----
-> A backend-focused, production-style project management API (think a lightweight Jira/Trello engine) built with **Java 21** and **Spring Boot 3.5**. Teams create **projects**, break work into **tasks/user stories**, assign developers, and move work through an **enforced status workflow** — all behind **JWT-secured**, well-documented REST endpoints.
+<div align="center">
 
-<p align="left">
-  <img alt="Java" src="https://img.shields.io/badge/Java-21-orange">
-  <img alt="Spring Boot" src="https://img.shields.io/badge/Spring%20Boot-3.5-brightgreen">
-  <img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-16-blue">
-  <img alt="Build" src="https://img.shields.io/badge/CI-GitHub%20Actions-black">
-</p>
+<img src="assets/cadence-banner.svg" alt="Cadence — a Java and Spring Boot project management REST API" width="100%" />
 
----
+<br />
 
-## Table of Contents
-- [Overview](#overview)
-- [Key Features](#key-features)
-- [Tech Stack](#tech-stack)
-- [Architecture](#architecture)
-- [Data Model (ER Diagram)](#data-model-er-diagram)
-- [Status Workflow Engine](#status-workflow-engine)
-- [Getting Started](#getting-started)
-- [API Documentation](#api-documentation)
-- [Core Endpoints](#core-endpoints)
-- [Testing](#testing)
-- [CI/CD](#cicd)
-- [Project Structure](#project-structure)
-- [Concepts Demonstrated](#concepts-demonstrated)
-- [Roadmap](#roadmap)
+[![OpenAPI docs](https://img.shields.io/badge/EXPLORE_API-Swagger_UI-3C789E?style=for-the-badge&logo=swagger&logoColor=white)](https://cadence-t6ui.onrender.com/swagger-ui.html)
+
+<br />
+
+`JAVA 21` &nbsp; · &nbsp; `SPRING BOOT 3.5` &nbsp; · &nbsp; `POSTGRESQL 16` &nbsp; · &nbsp; `JWT`
+
+</div>
+
+<br />
+
+> **The idea** &nbsp; Give teams a dependable API for projects and tasks, with clear rules for ownership, deadlines, authentication, and how work changes state.
 
 ---
 
-## Overview
+## ◈ Explore
 
-Cadence is a REST API for managing software projects and their work items. It is intentionally **backend-only** — the focus is clean architecture, domain modelling, security, and API design rather than UI. The API is fully explorable via **Swagger UI**.
+<div align="center">
 
-A **manager** oversees projects, a **team of developers** (many-to-many) collaborates on them, and each project contains **tasks** (user stories) with story points, due dates, assignees, and a strict **status lifecycle** enforced on the server.
+| &nbsp;01&nbsp; **Overview** | &nbsp;02&nbsp; **Workflow** | &nbsp;03&nbsp; **Quick start** | &nbsp;04&nbsp; **API** |
+|:---:|:---:|:---:|:---:|
+| [What it does](#what-it-does) | [Status rules](#status-workflows) | [Run with Docker](#run-with-docker) | [Endpoints](#api-at-a-glance) |
 
----
+</div>
 
-## Key Features
+## What it does
 
-- **JWT authentication** — register/login issue signed tokens; all business endpoints are protected.
-- **Role-ready users** with BCrypt-hashed passwords.
-- **Projects** with a manager (owner), a many-to-many developer team, description, and target due date.
-- **Tasks / user stories** with story points, due dates, optional assignee, and status.
-- **Enforced status workflow** — a shared state machine rejects illegal transitions (e.g. you cannot skip straight from `TODO` to `DONE`).
-- **Cross-entity business rules** — e.g. a task's due date cannot exceed its project's due date.
-- **Derived fields** — `remainingDays`, `overdue`, and a project's `totalStoryPoints` are computed, never stored stale.
-- **Consistent error handling** — one global handler returns clean JSON with correct HTTP status codes (400 / 404 / 409 / 422 / 500).
-- **Caching** on hot reads with eviction on writes.
-- **Interactive API docs** via Swagger / OpenAPI.
-- **Containerized** — the whole stack (app + PostgreSQL) runs with a single `docker compose up`.
-- **CI pipeline** — every push builds and runs the test suite on GitHub Actions.
+Cadence is a backend-only project management REST API built with Java and Spring Boot. It models teams, projects, and tasks (user stories), and enforces business rules in the service layer. Explore the API through the hosted or local Swagger UI.
 
----
+| **Projects & teams** | **Tasks & deadlines** | **Safe state changes** |
+|:---|:---|:---|
+| Create projects, assign a manager, and add developer members. | Track story points, due dates, optional assignees, and derived deadline fields. | JWT-protected business routes, validated requests, and workflow-checked project and task statuses. |
 
-## Tech Stack
+Other features include BCrypt password hashing, consistent JSON errors, caching for project reads, OpenAPI documentation, Docker Compose, and a GitHub Actions build-and-test workflow.
 
-| Area | Technology |
-|---|---|
-| Language | Java 21 |
-| Framework | Spring Boot 3.5 (Web, Data JPA, Security, Validation, Cache) |
-| Persistence | PostgreSQL 16, Hibernate ORM |
-| Auth | Spring Security + JWT (jjwt), BCrypt |
-| Docs | springdoc-openapi (Swagger UI) |
-| Testing | JUnit 5, Mockito |
-| Build | Maven |
-| DevOps | Docker, Docker Compose, GitHub Actions |
+## How it fits together
 
----
-
-## Architecture
-
-Cadence follows a clean **layered architecture** with dependencies pointing inward:
-
-```
-Client ──► Controller (REST / HTTP)  ──►  Service (business logic)  ──►  Repository (Spring Data JPA)  ──►  PostgreSQL
-                     │                              │
-                  DTOs + @Valid            interfaces + @Transactional
+```mermaid
+flowchart LR
+    C[HTTP client] -->|JSON + Bearer token| API[REST controllers]
+    API --> DTO[Validated DTOs]
+    DTO --> S[Service layer: business rules + transactions]
+    S --> R[Spring Data repositories]
+    R --> DB[(PostgreSQL)]
+    SEC[JWT filter + security] -. protects .-> API
+    WF[Shared status workflow] -. validates .-> S
+    ERR[Global error handler] -. formats errors .-> API
 ```
 
-- **Controllers** handle HTTP only and speak **DTOs** (never expose JPA entities).
-- **Services** hold business rules and coordinate transactions; they depend on **interfaces** (SOLID / dependency inversion).
-- **Repositories** are Spring Data JPA interfaces.
-- Cross-cutting concerns — **security**, **exception handling**, and the **status workflow engine** — live in dedicated packages and are reused everywhere (DRY).
+Controllers expose DTOs rather than persistence entities. Services own business rules and transactions, repositories handle persistence, and shared security, workflow, and error handling apply across the API.
 
----
+## Status workflows
 
-## Data Model (ER Diagram)
+Status updates follow explicit paths. Skipping steps or changing a terminal status returns `409 Conflict`. A blocked or on-hold item can resume only to the state it left.
 
-![Cadence ER Diagram](https://github.com/atandritC/Project-Demos/blob/main/Cadence_ER-Diagram.png)
+```mermaid
+stateDiagram-v2
+    state "Task" as Task {
+        [*] --> TODO
+        TODO --> IN_PROGRESS
+        IN_PROGRESS --> READY_FOR_TESTING
+        IN_PROGRESS --> BLOCKED
+        READY_FOR_TESTING --> BLOCKED
+        BLOCKED --> IN_PROGRESS: resume to prior state
+        BLOCKED --> READY_FOR_TESTING: resume to prior state
+        READY_FOR_TESTING --> DONE
+        TODO --> CANCELLED
+        IN_PROGRESS --> CANCELLED
+        READY_FOR_TESTING --> CANCELLED
+        BLOCKED --> CANCELLED
+    }
+```
 
-- `users` — accounts (email, hashed password, role).
-- `projects` — owned by a manager (`@ManyToOne`), with a developer team (`project_members`, `@ManyToMany`).
-- `tasks` — belong to a project (`@ManyToOne`, bidirectional with cascade + orphan removal), optionally assigned to a user.
+Project states are `PLANNED → IN_PROGRESS → COMPLETED`, with `ON_HOLD` as a pausable state that resumes to `IN_PROGRESS`. Both workflows allow cancellation before a terminal state; `DONE`, `COMPLETED`, and `CANCELLED` are final.
 
----
+## Data model
 
-## Status Workflow Engine
+```mermaid
+erDiagram
+    USER ||--o{ PROJECT : manages
+    USER }o--o{ PROJECT : joins
+    PROJECT ||--o{ TASK : contains
+    USER o|--o{ TASK : assigned_to
+```
 
-Both **tasks** and **projects** move through a **finite state machine** enforced by a single generic engine (`WorkflowStatus` + `StatusWorkflow`). Illegal transitions are rejected with `409 Conflict`.
+A project has one manager and can have multiple developer members. A task belongs to one project and may be assigned to a user.
 
-![Cadence Status Workflows](https://github.com/atandritC/Project-Demos/blob/main/cadence-status-workflows.svg)
+## Get started
 
-**Rules (shared by both workflows):**
-- A **forward-only** happy path — no skipping steps.
-- A **pausable** side-state (`BLOCKED` / `ON_HOLD`) that can only **resume to the exact state it came from**.
-- **CANCELLED** is reachable from **any non-final state**.
-- Final states (`DONE`/`COMPLETED` and `CANCELLED`) have **no exit**.
+### Requirements
 
----
+- Java **21**
+- Docker and Docker Compose, or PostgreSQL **16** plus the included Maven wrapper
 
-## Getting Started
+### Run with Docker
 
-### Prerequisites
-- Java 21
-- Maven (or use the bundled `./mvnw`)
-- PostgreSQL 16 **or** Docker
-
-### Option A — Run with Docker (recommended)
+From the project root:
 
 ```bash
+git clone https://github.com/atandritC/Cadence.git
+cd Cadence
 docker compose up --build
 ```
 
-This starts PostgreSQL and the app together. The API is available at `http://localhost:8080`.
+The API will be available at <http://localhost:8080>. Open the local Swagger UI at <http://localhost:8080/swagger-ui.html>.
 
-### Option B — Run locally
+The Compose file uses the local development database credentials defined in `docker-compose.yml`. Change them and set a strong `APP_JWT_SECRET` before exposing a deployment beyond your machine.
 
-1. Create the database:
-   ```sql
-   CREATE DATABASE cadence;
-   CREATE USER cadence WITH PASSWORD 'cadence';
-   GRANT ALL ON SCHEMA public TO cadence;
-   ```
-2. Start the app:
-   ```bash
-   ./mvnw spring-boot:run
-   ```
+### Run with a local PostgreSQL database
 
-Configuration lives in `src/main/resources/application.properties` (DB connection and JWT settings).
+Create the database and development user:
 
----
-
-## API Documentation
-
-Interactive docs are served by Swagger UI:
-
-```
-http://localhost:8080/swagger-ui.html
+```sql
+CREATE DATABASE cadence;
+CREATE USER cadence WITH PASSWORD 'cadence';
+GRANT ALL ON SCHEMA public TO cadence;
 ```
 
-**To try protected endpoints:**
-1. Call `POST /cadence/auth/register` (or `/login`) and copy the returned `token`.
-2. Click **Authorize** in Swagger UI and paste the token.
-3. All requests now include the `Authorization: Bearer <token>` header.
+Then start the application:
 
-> A read-only rendering of the API docs is also available on GitHub Pages (via the committed OpenAPI spec).
+```bash
+./mvnw spring-boot:run
+```
 
----
+The default local datasource points to `localhost:5432/cadence`. Configure a different database or JWT settings with the environment variables below.
 
-## Core Endpoints
+| Variable | Purpose | Default |
+|:--|:--|:--|
+| `SPRING_DATASOURCE_URL` | JDBC connection string | `jdbc:postgresql://localhost:5432/cadence` |
+| `SPRING_DATASOURCE_USERNAME` | Database user | `cadence` |
+| `SPRING_DATASOURCE_PASSWORD` | Database password | `cadence` |
+| `APP_JWT_SECRET` | Signing key for issued JWTs | Development default; replace outside local use |
+| `APP_JWT_EXPIRATION_MS` | Token lifetime in milliseconds | `86400000` (24 hours) |
+| `PORT` | HTTP port | `8080` |
 
-> All endpoints except `auth` and the Swagger/OpenAPI routes require a JWT.
+## Try the API
 
-| Method | Endpoint | Description |
-|---|---|---|
-| `POST` | `/cadence/auth/register` | Create an account, returns a JWT |
-| `POST` | `/cadence/auth/login` | Log in, returns a JWT |
-| `GET`  | `/cadence/users` | List users |
-| `GET`  | `/cadence/users/{id}` | Get a user |
+### Register and get a token
+
+```bash
+curl -X POST http://localhost:8080/cadence/auth/register \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"you@example.com","fullName":"Your Name","password":"change-me"}'
+```
+
+The response contains a JWT in `token`. Use it as a bearer token for protected routes:
+
+```bash
+curl http://localhost:8080/cadence/users \
+  -H 'Authorization: Bearer YOUR_TOKEN'
+```
+
+Swagger UI also supports authenticated requests: call `/cadence/auth/register` or `/cadence/auth/login`, copy `token`, choose **Authorize**, then enter the token.
+
+## API at a glance
+
+All business endpoints require a JWT. Registration, login, and Swagger/OpenAPI routes are public.
+
+| Method | Endpoint | Purpose |
+|:--|:--|:--|
+| `POST` | `/cadence/auth/register` | Register an account and issue a token |
+| `POST` | `/cadence/auth/login` | Authenticate and issue a token |
+| `GET` | `/cadence/users` · `/cadence/users/{id}` | List users or get one user |
 | `POST` | `/cadence/projects` | Create a project |
-| `GET`  | `/cadence/projects/{id}` | Get a project |
-| `GET`  | `/cadence/projects?managerId={id}` | List projects by manager |
-| `POST` | `/cadence/projects/{id}/members/{userId}` | Add a developer to the team |
-| `PATCH`| `/cadence/projects/{id}/status` | Change project status (workflow-checked) |
-| `POST` | `/cadence/tasks` | Create a task / user story |
-| `GET`  | `/cadence/tasks/{id}` | Get a task |
-| `GET`  | `/cadence/tasks?projectId={id}` | List a project's tasks |
-| `PATCH`| `/cadence/tasks/{id}/status` | Change task status (workflow-checked) |
+| `GET` | `/cadence/projects/{id}` | Get a project |
+| `GET` | `/cadence/projects?managerId={id}` | List projects for a manager |
+| `POST` | `/cadence/projects/{id}/members/{userId}` | Add a project member |
+| `PATCH` | `/cadence/projects/{id}/status` | Apply a valid project transition |
+| `POST` | `/cadence/tasks` | Create a task or user story |
+| `GET` | `/cadence/tasks/{id}` | Get a task |
+| `GET` | `/cadence/tasks?projectId={id}` | List a project’s tasks |
+| `PATCH` | `/cadence/tasks/{id}/status` | Apply a valid task transition |
 
----
+## Business rules & responses
 
-## Testing
+- A task’s due date cannot be later than its project’s due date.
+- Story points cannot be negative.
+- `remainingDays`, `overdue`, and project `totalStoryPoints` are derived for responses rather than stored as mutable totals.
+- Invalid workflow transitions and duplicate resources return `409`; missing resources return `404`; business-rule violations return `422`; validation errors return `400`.
+
+Errors use a consistent JSON response with a timestamp, status, message, and optional field details.
+
+## Run the tests
+
+Start PostgreSQL first (for example, with `docker compose up -d db`), then run:
 
 ```bash
 ./mvnw test
 ```
 
-- **Unit tests** for the service layer using **Mockito** (dependencies mocked, logic tested in isolation).
-- **Pure unit tests** for the status-workflow state machine (all transition rules).
+The suite includes a Spring application context test, service tests, and unit tests for the shared status workflow. The CI workflow starts PostgreSQL automatically.
+
+## CI
+
+A GitHub Actions workflow runs on pushes and pull requests to `main`. It provisions PostgreSQL 16, sets up JDK 21, then runs `./mvnw --batch-mode clean verify`.
+
+## Known limitations
+
+- Cadence is an API project; it does not include a web user interface.
+- The hosted Swagger UI runs on a free Render service and may need time to wake after inactivity.
+- The included Docker Compose credentials are for local development. Set your own database credentials and JWT signing secret for any shared deployment.
+- The project uses Hibernate schema update (`ddl-auto=update`); it does not currently include a database migration tool.
 
 ---
 
-## CI/CD
+<div align="center">
 
-Every push and pull request to `main` triggers a **GitHub Actions** pipeline that:
-1. Checks out the code and sets up JDK 21.
-2. Spins up a PostgreSQL service container.
-3. Runs `./mvnw clean verify` (compile + tests).
+**Cadence** &nbsp; · &nbsp; Projects, tasks, and progress in rhythm.
 
-A failing test fails the build, keeping `main` always healthy.
+[Explore the Swagger UI →](https://cadence-t6ui.onrender.com/swagger-ui.html)
 
----
-
-## Project Structure
-
-```
-src/main/java/com/cadence
-├── common/           # BaseEntity, exceptions, workflow engine, shared helpers
-├── security/         # JWT, Spring Security config, auth endpoints
-├── user/             # User entity, repo, service, controller, DTOs
-├── project/          # Project domain (manager, members, status)
-└── task/             # Task domain (status, story points, assignee)
-```
-
----
-
-## Concepts Demonstrated
-
-- **Core Java:** OOP (encapsulation, inheritance via `BaseEntity`, polymorphism, abstraction), exception handling, collections, enums.
-- **Java 8+:** Streams, lambdas, method references, `Optional`, records for DTOs.
-- **Spring Boot:** dependency injection, bean lifecycle, Spring Data JPA, Spring Security, caching, validation, global exception handling.
-- **JPA/Hibernate:** entity relationships (`@ManyToOne`, `@OneToMany`, `@ManyToMany`), owning vs inverse side, cascade & orphan removal, lazy vs eager, fixing the N+1 problem with `JOIN FETCH`.
-- **API design:** RESTful resources, DTO boundaries, correct status codes, OpenAPI docs.
-- **Engineering practices:** layered architecture, SOLID, a reusable (DRY) workflow engine, unit testing, Dockerization, and CI.
-
----
-
-## Roadmap
-
-- Role-based authorization (`@PreAuthorize`) for admin-only operations
-- Pagination, filtering, and sorting on list endpoints
-- Comments and activity feed on tasks
-- Integration tests with Testcontainers
-- Deployment to a cloud PaaS with a live demo URL
-
----
-
-*Built as a hands-on study of production-grade Spring Boot backend development.*
+</div>
